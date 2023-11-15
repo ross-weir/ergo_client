@@ -1,15 +1,5 @@
-[package]
-name = "ergo_client"
-version = "0.1.0"
-edition = "2021"
-
-[dependencies]
-reqwest = { version = "0.11.22", features = ["json"] }
-thiserror = "1.0.50"
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0.108"
-
-[features]
-default = ["node", "blocking"]
-node = []
-blocking = ["reqwest/blocking"]
+[workspace]
+members = [
+  "ergo_client",
+  "ergo_client_macro",
+]
