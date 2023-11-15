@@ -1,14 +1,13 @@
-pub fn add(left: usize, right: usize) -> usize {
-    left + right
-}
+pub mod node;
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+#[derive(thiserror::Error, Debug)]
+pub enum Error {
+    #[error("Failed to parse url: {0}")]
+    UrlParsing(String),
 
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
+    #[error("Failed to perform request: {0}")]
+    Request(#[from] reqwest::Error),
+
+    #[error("Failed to deserialize response from url '{url}' due to: {cause}")]
+    ResponseDeserialization { url: String, cause: reqwest::Error },
 }
