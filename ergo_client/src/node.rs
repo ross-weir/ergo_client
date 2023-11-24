@@ -9,13 +9,13 @@ use std::{rc::Rc, time::Duration};
 #[derive(Debug)]
 pub struct NodeClient {
     client: Rc<Client>,
-    base_url: Url,
+    url: Url,
     wallet: WalletEndpoint,
 }
 
 impl NodeClient {
     pub fn from_url_str(url_str: &str, api_key: String, timeout: Duration) -> Result<Self, Error> {
-        let base_url = Url::parse(url_str).map_err(|e| Error::UrlParsing(e.to_string()))?;
+        let url = Url::parse(url_str).map_err(|e| Error::UrlParsing(e.to_string()))?;
         let mut headers = HeaderMap::new();
         headers.insert("api_key", api_key.clone().try_into()?);
         let client = Rc::new(
@@ -23,21 +23,17 @@ impl NodeClient {
                 .default_headers(headers)
                 .timeout(timeout)
                 .build()
-                .unwrap(),
+                .map_err(|e| Error::BuildClient(e))?,
         );
-        let wallet_url = base_url
-            .join("wallet")
-            .map_err(|e| Error::UrlParsing(e.to_string()))?;
-        let wallet = WalletEndpoint::new(client.clone(), wallet_url)?;
         Ok(Self {
-            client,
-            base_url,
-            wallet,
+            client: client.clone(),
+            url: url.clone(),
+            wallet: WalletEndpoint::new(client, url.clone())?,
         })
     }
 
     pub fn base_url(&self) -> Url {
-        self.base_url.clone()
+        self.url.clone()
     }
 
     pub fn wallet(&self) -> &WalletEndpoint {
@@ -55,7 +51,7 @@ pub struct InfoResponse {
 impl NodeClient {
     pub async fn info(&self) -> Result<InfoResponse, Error> {
         let url = self
-            .base_url
+            .url
             .join("info")
             .map_err(|e| Error::UrlParsing(e.to_string()))?;
         self.client

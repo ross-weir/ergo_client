@@ -7,16 +7,19 @@ use std::rc::Rc;
 #[derive(Debug)]
 pub struct BoxesEndpoint {
     client: Rc<Client>,
-    base_url: Url,
+    url: Url,
 }
 
 impl BoxesEndpoint {
-    pub fn new(client: Rc<Client>, base_url: Url) -> Self {
-        Self { client, base_url }
+    pub fn new(client: Rc<Client>, mut url: Url) -> Result<Self, Error> {
+        url.path_segments_mut()
+            .map_err(|_| Error::AppendPathSegment)?
+            .push("boxes");
+        Ok(Self { client, url })
     }
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct UnspentResponseEntry {
     pub confirmations_num: u32,
@@ -53,7 +56,7 @@ impl BoxesEndpoint {
         &self,
         query: Option<UnspentQuery>,
     ) -> Result<Vec<UnspentResponseEntry>, Error> {
-        let mut url = self.base_url.clone();
+        let mut url = self.url.clone();
         url.path_segments_mut()
             .map_err(|_| Error::AppendPathSegment)?
             .push("unspent");

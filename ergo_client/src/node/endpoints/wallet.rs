@@ -1,4 +1,5 @@
 pub mod boxes;
+pub mod transaction;
 
 use self::boxes::BoxesEndpoint;
 use crate::Error;
@@ -9,21 +10,19 @@ use std::rc::Rc;
 #[derive(Debug)]
 pub struct WalletEndpoint {
     client: Rc<Client>,
-    base_url: Url,
+    url: Url,
     boxes_endpoint: BoxesEndpoint,
 }
 
 impl WalletEndpoint {
-    pub fn new(client: Rc<Client>, base_url: Url) -> Result<Self, crate::Error> {
-        let mut boxes_url = base_url.clone();
-        boxes_url
-            .path_segments_mut()
+    pub fn new(client: Rc<Client>, mut url: Url) -> Result<Self, crate::Error> {
+        url.path_segments_mut()
             .map_err(|_| Error::AppendPathSegment)?
-            .push("boxes");
+            .push("wallet");
         Ok(Self {
             client: client.clone(),
-            base_url,
-            boxes_endpoint: BoxesEndpoint::new(client, boxes_url),
+            url: url.clone(),
+            boxes_endpoint: BoxesEndpoint::new(client, url)?,
         })
     }
 
@@ -44,7 +43,7 @@ pub struct StatusResponse {
 
 impl WalletEndpoint {
     pub async fn status(&self) -> Result<StatusResponse, Error> {
-        let mut url = self.base_url.clone();
+        let mut url = self.url.clone();
         url.path_segments_mut()
             .map_err(|_| Error::AppendPathSegment)?
             .push("status");
