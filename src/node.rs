@@ -1,16 +1,18 @@
 pub mod endpoints;
 
-use self::endpoints::wallet::WalletEndpoint;
+use self::endpoints::{
+    root::RootEndpoint, transactions::TransactionsEndpoint, wallet::WalletEndpoint,
+};
 use crate::Error;
 use reqwest::{header::HeaderMap, Client, Url};
-use serde::Deserialize;
 use std::{rc::Rc, time::Duration};
 
 #[derive(Debug)]
 pub struct NodeClient {
-    client: Rc<Client>,
     url: Url,
+    root: RootEndpoint,
     wallet: WalletEndpoint,
+    transactions: TransactionsEndpoint,
 }
 
 impl NodeClient {
@@ -26,9 +28,10 @@ impl NodeClient {
                 .map_err(|e| Error::BuildClient(e))?,
         );
         Ok(Self {
-            client: client.clone(),
             url: url.clone(),
-            wallet: WalletEndpoint::new(client, url.clone())?,
+            root: RootEndpoint::new(client.clone(), url.clone())?,
+            wallet: WalletEndpoint::new(client.clone(), url.clone())?,
+            transactions: TransactionsEndpoint::new(client, url.clone())?,
         })
     }
 
@@ -36,33 +39,15 @@ impl NodeClient {
         self.url.clone()
     }
 
+    pub fn root(&self) -> &RootEndpoint {
+        &self.root
+    }
+
     pub fn wallet(&self) -> &WalletEndpoint {
         &self.wallet
     }
-}
 
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct InfoResponse {
-    pub difficulty: u64,
-    pub full_height: i32,
-}
-
-impl NodeClient {
-    pub async fn info(&self) -> Result<InfoResponse, Error> {
-        let url = self
-            .url
-            .join("info")
-            .map_err(|e| Error::UrlParsing(e.to_string()))?;
-        self.client
-            .get(url.clone())
-            .send()
-            .await?
-            .json()
-            .await
-            .map_err(|e| Error::ResponseDeserialization {
-                url: url.to_string(),
-                cause: e,
-            })
+    pub fn transactions(&self) -> &TransactionsEndpoint {
+        &self.transactions
     }
 }

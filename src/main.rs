@@ -11,7 +11,7 @@ pub async fn main() {
     )
     .unwrap();
 
-    dbg!(client.info().await.unwrap());
+    dbg!(client.root().info().await.unwrap());
     dbg!(client.wallet().status().await.unwrap());
     dbg!(client.wallet().boxes().unspent(None).await.unwrap());
 }

@@ -44,7 +44,7 @@ impl TransactionEndpoint {
     pub async fn sign(
         &self,
         unsigned_tx: UnsignedTransaction,
-        inputs: Vec<ErgoBox>,
+        inputs: Option<Vec<ErgoBox>>,
         data_inputs: Option<Vec<ErgoBox>>,
     ) -> Result<Transaction, Error> {
         let mut url = self.url.clone();
@@ -53,7 +53,7 @@ impl TransactionEndpoint {
             .push("sign");
         let body = SignRequest {
             tx: unsigned_tx,
-            inputs_raw: self.to_raw_boxes(inputs)?,
+            inputs_raw: self.to_raw_boxes(inputs.unwrap_or_default())?,
             data_inputs_raw: self.to_raw_boxes(data_inputs.unwrap_or_default())?,
         };
 
