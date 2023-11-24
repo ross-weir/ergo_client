@@ -1,7 +1,6 @@
 use crate::Error;
 use ergo_lib::chain::transaction::Transaction;
 use reqwest::{Client, Url};
-use serde::{Deserialize, Serialize};
 use std::rc::Rc;
 
 #[derive(Debug)]
@@ -17,12 +16,6 @@ impl TransactionsEndpoint {
             .push("transactions");
         Ok(Self { client, url })
     }
-}
-
-#[derive(Debug, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct SubmitRequest {
-    tx: Transaction,
 }
 
 impl TransactionsEndpoint {
