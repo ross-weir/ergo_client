@@ -1,5 +1,4 @@
 [workspace]
 members = [
   "ergo_client",
-  "ergo_client_macro",
 ]
