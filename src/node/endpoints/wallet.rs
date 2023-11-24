@@ -11,7 +11,7 @@ use std::rc::Rc;
 pub struct WalletEndpoint {
     client: Rc<Client>,
     url: Url,
-    boxes_endpoint: BoxesEndpoint,
+    boxes: BoxesEndpoint,
 }
 
 impl WalletEndpoint {
@@ -22,12 +22,12 @@ impl WalletEndpoint {
         Ok(Self {
             client: client.clone(),
             url: url.clone(),
-            boxes_endpoint: BoxesEndpoint::new(client, url)?,
+            boxes: BoxesEndpoint::new(client, url)?,
         })
     }
 
     pub fn boxes(&self) -> &BoxesEndpoint {
-        &self.boxes_endpoint
+        &self.boxes
     }
 }
 
