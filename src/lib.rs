@@ -1,4 +1,4 @@
-use ergo_lib::ergotree_ir::serialization::SigmaSerializationError;
+use ergo_lib::ergotree_ir::serialization::{SigmaParsingError, SigmaSerializationError};
 
 pub mod node;
 
@@ -21,6 +21,9 @@ pub enum Error {
 
     #[error("Failed to serialize to bytes")]
     SigmaSerialization(#[from] SigmaSerializationError),
+
+    #[error("Failed to parse bytes")]
+    SigmaParsing(#[from] SigmaParsingError),
 
     #[error("Node error occurred")]
     Node(#[from] node::NodeError),

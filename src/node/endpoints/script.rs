@@ -19,6 +19,33 @@ impl<'a> ScriptEndpoint<'a> {
 }
 
 #[derive(Debug, Deserialize)]
+struct AddressToTreeResponse {
+    tree: String,
+}
+
+impl<'a> ScriptEndpoint<'a> {
+    pub async fn address_to_tree(&self, network_address: &str) -> Result<String, Error> {
+        let mut url = self.url.clone();
+        url.path_segments_mut()
+            .map_err(|_| Error::AppendPathSegment)?
+            .push("addressToTree")
+            .push(network_address);
+        Ok(self
+            .client
+            .get(url.clone())
+            .send()
+            .await?
+            .json::<AddressToTreeResponse>()
+            .await
+            .map_err(|e| Error::ResponseDeserialization {
+                url: url.to_string(),
+                cause: e,
+            })?
+            .tree)
+    }
+}
+
+#[derive(Debug, Deserialize)]
 struct P2sAddressResponse {
     address: String,
 }
