@@ -1,11 +1,15 @@
 pub mod root;
+pub mod script;
 pub mod transactions;
 pub mod wallet;
 
 use reqwest::{Client, Url};
 use serde::Serialize;
 
-use self::{root::RootEndpoint, transactions::TransactionsEndpoint, wallet::WalletEndpoint};
+use self::{
+    root::RootEndpoint, script::ScriptEndpoint, transactions::TransactionsEndpoint,
+    wallet::WalletEndpoint,
+};
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -48,5 +52,9 @@ impl NodeEndpoint {
 
     pub fn transactions(&self) -> Result<TransactionsEndpoint, crate::Error> {
         TransactionsEndpoint::new(&self.client, self.url.clone())
+    }
+
+    pub fn script(&self) -> Result<ScriptEndpoint, crate::Error> {
+        ScriptEndpoint::new(&self.client, self.url.clone())
     }
 }
