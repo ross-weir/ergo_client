@@ -25,4 +25,7 @@ pub enum Error {
 
     #[error("Failed to serialize to bytes")]
     SigmaSerialization(#[from] SigmaSerializationError),
+
+    #[error("Node error occurred")]
+    Node(#[from] node::NodeError),
 }

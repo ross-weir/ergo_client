@@ -10,8 +10,9 @@ pub async fn main() {
         Duration::from_secs(10),
     )
     .unwrap();
+    let endpoints = client.endpoints();
 
-    dbg!(client.root().info().await.unwrap());
-    dbg!(client.wallet().status().await.unwrap());
-    dbg!(client.wallet().boxes().unspent(None).await.unwrap());
+    dbg!(endpoints.root().info().await.unwrap());
+    dbg!(endpoints.wallet().status().await.unwrap());
+    dbg!(endpoints.wallet().boxes().unspent(None).await.unwrap());
 }

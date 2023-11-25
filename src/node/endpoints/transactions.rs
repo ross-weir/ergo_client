@@ -3,7 +3,7 @@ use ergo_lib::chain::transaction::Transaction;
 use reqwest::{Client, Url};
 use std::rc::Rc;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct TransactionsEndpoint {
     client: Rc<Client>,
     url: Url,

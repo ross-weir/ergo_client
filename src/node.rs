@@ -1,18 +1,22 @@
 pub mod endpoints;
+pub mod extensions;
 
-use self::endpoints::{
-    root::RootEndpoint, transactions::TransactionsEndpoint, wallet::WalletEndpoint,
-};
+use self::{endpoints::NodeEndpoint, extensions::NodeExtension};
 use crate::Error;
 use reqwest::{header::HeaderMap, Client, Url};
-use std::{rc::Rc, time::Duration};
+use std::time::Duration;
+
+#[derive(thiserror::Error, Debug)]
+pub enum NodeError {
+    #[error("Nodes wallet doesn't hold enough nanoergs, {found} < {requested}")]
+    InsufficientFunds { requested: u64, found: u64 },
+}
 
 #[derive(Debug)]
 pub struct NodeClient {
     url: Url,
-    root: RootEndpoint,
-    wallet: WalletEndpoint,
-    transactions: TransactionsEndpoint,
+    endpoints: NodeEndpoint,
+    extensions: NodeExtension,
 }
 
 impl NodeClient {
@@ -20,18 +24,16 @@ impl NodeClient {
         let url = Url::parse(url_str).map_err(|e| Error::UrlParsing(e.to_string()))?;
         let mut headers = HeaderMap::new();
         headers.insert("api_key", api_key.clone().try_into()?);
-        let client = Rc::new(
-            Client::builder()
-                .default_headers(headers)
-                .timeout(timeout)
-                .build()
-                .map_err(|e| Error::BuildClient(e))?,
-        );
+        let client = Client::builder()
+            .default_headers(headers)
+            .timeout(timeout)
+            .build()
+            .map_err(|e| Error::BuildClient(e))?;
+        let endpoints = NodeEndpoint::new(client, url.clone())?;
         Ok(Self {
-            url: url.clone(),
-            root: RootEndpoint::new(client.clone(), url.clone())?,
-            wallet: WalletEndpoint::new(client.clone(), url.clone())?,
-            transactions: TransactionsEndpoint::new(client, url.clone())?,
+            url,
+            extensions: NodeExtension::new(endpoints.clone()),
+            endpoints,
         })
     }
 
@@ -39,15 +41,11 @@ impl NodeClient {
         self.url.clone()
     }
 
-    pub fn root(&self) -> &RootEndpoint {
-        &self.root
+    pub fn endpoints(&self) -> &NodeEndpoint {
+        &self.endpoints
     }
 
-    pub fn wallet(&self) -> &WalletEndpoint {
-        &self.wallet
-    }
-
-    pub fn transactions(&self) -> &TransactionsEndpoint {
-        &self.transactions
+    pub fn extensions(&self) -> &NodeExtension {
+        &self.extensions
     }
 }

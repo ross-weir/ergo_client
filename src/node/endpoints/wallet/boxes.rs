@@ -4,7 +4,7 @@ use reqwest::{Client, Url};
 use serde::{Deserialize, Serialize};
 use std::rc::Rc;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct BoxesEndpoint {
     client: Rc<Client>,
     url: Url,

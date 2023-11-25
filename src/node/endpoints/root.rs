@@ -4,7 +4,7 @@ use crate::Error;
 use reqwest::{Client, Url};
 use serde::Deserialize;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct RootEndpoint {
     client: Rc<Client>,
     url: Url,

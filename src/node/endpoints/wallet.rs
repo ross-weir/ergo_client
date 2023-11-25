@@ -7,7 +7,7 @@ use reqwest::{Client, Url};
 use serde::Deserialize;
 use std::rc::Rc;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct WalletEndpoint {
     client: Rc<Client>,
     url: Url,
