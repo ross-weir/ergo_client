@@ -23,10 +23,7 @@ pub struct InfoResponse {
 
 impl<'a> RootEndpoint<'a> {
     pub async fn info(&self) -> Result<InfoResponse, Error> {
-        let url = self
-            .url
-            .join("info")
-            .map_err(|e| Error::UrlParsing(e.to_string()))?;
+        let url = self.url.join("info")?;
         self.client
             .get(url.clone())
             .send()

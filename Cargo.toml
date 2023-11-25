@@ -6,13 +6,16 @@ license = "CC0-1.0"
 
 [dependencies]
 reqwest = { version = "0.11.22", features = ["json"] }
+# reqwest doesn't expose `ParseError`: https://github.com/seanmonstar/reqwest/issues/1853
+url = "2.2"
 thiserror = "1.0.50"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0.108"
 serde_qs = "0.12.0"
 ergo_lib = { git = "https://github.com/ergoplatform/sigma-rust.git", branch = "master", package = "ergo-lib" }
-# this is purely for testing and experimenting, enables async main func in main.rs
+# these crates are purely for testing with main.rs
 tokio = { version = "1", features = ["full"] }
+anyhow = "1.0.75"
 
 [features]
 default = ["node", "blocking"]

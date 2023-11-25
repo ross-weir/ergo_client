@@ -7,13 +7,13 @@ pub enum Error {
     #[error("Failed to build http client")]
     BuildClient(reqwest::Error),
 
-    #[error("Failed to parse url: {0}")]
-    UrlParsing(String),
+    #[error("Failed to parse URL")]
+    UrlParse(#[from] url::ParseError),
 
     #[error("Failed to append segment to url")]
     AppendPathSegment,
 
-    #[error("Failed to perform request: {0}")]
+    #[error("Failed to perform request")]
     Request(#[from] reqwest::Error),
 
     #[error("Failed to deserialize response from url '{url}' due to: {cause}")]

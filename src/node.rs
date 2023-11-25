@@ -25,7 +25,7 @@ pub struct NodeClient {
 
 impl NodeClient {
     pub fn from_url_str(url_str: &str, api_key: String, timeout: Duration) -> Result<Self, Error> {
-        let url = Url::parse(url_str).map_err(|e| Error::UrlParsing(e.to_string()))?;
+        let url = Url::parse(url_str)?;
         let mut headers = HeaderMap::new();
         headers.insert(
             "api_key",
