@@ -1,0 +1,50 @@
+use crate::Error;
+use reqwest::{Client, Url};
+use serde::Deserialize;
+use serde_json::json;
+
+#[derive(Debug, Clone)]
+pub struct ScriptEndpoint<'a> {
+    client: &'a Client,
+    url: Url,
+}
+
+impl<'a> ScriptEndpoint<'a> {
+    pub fn new(client: &'a Client, mut url: Url) -> Result<Self, Error> {
+        url.path_segments_mut()
+            .map_err(|_| Error::AppendPathSegment)?
+            .push("script");
+        Ok(Self { client, url })
+    }
+}
+
+#[derive(Debug, Deserialize)]
+struct P2sAddressResponse {
+    address: String,
+}
+
+impl<'a> ScriptEndpoint<'a> {
+    /// Compiles the provided ErgoScript source code to a network encoded address.
+    pub async fn p2s_address(&self, source: &str) -> Result<String, Error> {
+        let mut url = self.url.clone();
+        url.path_segments_mut()
+            .map_err(|_| Error::AppendPathSegment)?
+            .push("p2sAddress");
+        let body = json!({
+            "source": source
+        });
+        Ok(self
+            .client
+            .post(url.clone())
+            .json(&body)
+            .send()
+            .await?
+            .json::<P2sAddressResponse>()
+            .await
+            .map_err(|e| Error::ResponseDeserialization {
+                url: url.to_string(),
+                cause: e,
+            })?
+            .address)
+    }
+}
