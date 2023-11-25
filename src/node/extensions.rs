@@ -1,5 +1,9 @@
 use ergo_lib::{
-    chain::transaction::unsigned::UnsignedTransaction, ergotree_ir::chain::ergo_box::ErgoBox,
+    chain::transaction::unsigned::UnsignedTransaction,
+    ergotree_ir::{
+        chain::{address::NetworkAddress, ergo_box::ErgoBox},
+        ergo_tree::ErgoTree,
+    },
 };
 
 use crate::Error;
@@ -67,5 +71,11 @@ impl<'a> NodeExtension<'a> {
             .sign(unsigned_tx, None, None)
             .await?;
         self.endpoints.transactions()?.submit(signed_tx).await
+    }
+
+    /// Compiles the provided Ergo Script source code into a ErgoTree instance
+    pub async fn compile_contract(&self, source: &str) -> Result<ErgoTree, Error> {
+        let addr = self.endpoints.script()?.p2s_address(source).await?;
+        Ok(NetworkAddress::try_from(addr).unwrap().address().script()?)
     }
 }
