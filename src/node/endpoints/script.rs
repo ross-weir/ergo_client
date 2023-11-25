@@ -35,11 +35,12 @@ impl<'a> ScriptEndpoint<'a> {
             .get(url.clone())
             .send()
             .await?
+            .error_for_status()?
             .json::<AddressToTreeResponse>()
             .await
             .map_err(|e| Error::ResponseDeserialization {
                 url: url.to_string(),
-                cause: e,
+                source: e,
             })?
             .tree)
     }
@@ -66,11 +67,12 @@ impl<'a> ScriptEndpoint<'a> {
             .json(&body)
             .send()
             .await?
+            .error_for_status()?
             .json::<P2sAddressResponse>()
             .await
             .map_err(|e| Error::ResponseDeserialization {
                 url: url.to_string(),
-                cause: e,
+                source: e,
             })?
             .address)
     }

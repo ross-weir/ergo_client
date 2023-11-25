@@ -50,11 +50,12 @@ impl<'a> WalletEndpoint<'a> {
             .get(url.clone())
             .send()
             .await?
+            .error_for_status()?
             .json()
             .await
             .map_err(|e| Error::ResponseDeserialization {
                 url: url.to_string(),
-                cause: e,
+                source: e,
             })
     }
 }

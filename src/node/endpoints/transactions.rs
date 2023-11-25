@@ -26,11 +26,12 @@ impl<'a> TransactionsEndpoint<'a> {
             .json(&tx)
             .send()
             .await?
+            .error_for_status()?
             .json()
             .await
             .map_err(|e| Error::ResponseDeserialization {
                 url: self.url.to_string(),
-                cause: e,
+                source: e,
             })
     }
 }
