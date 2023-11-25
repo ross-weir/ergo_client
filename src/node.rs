@@ -18,7 +18,7 @@ pub enum NodeError {
     InvalidApiKey(#[from] InvalidHeaderValue),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct NodeClient {
     endpoints: NodeEndpoint,
 }
