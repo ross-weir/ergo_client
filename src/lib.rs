@@ -1,5 +1,4 @@
 use ergo_lib::ergotree_ir::serialization::SigmaSerializationError;
-use reqwest::header::InvalidHeaderValue;
 
 pub mod node;
 
@@ -16,9 +15,6 @@ pub enum Error {
 
     #[error("Failed to perform request: {0}")]
     Request(#[from] reqwest::Error),
-
-    #[error("Invalid value for api_key")]
-    InvalidApiKey(#[from] InvalidHeaderValue),
 
     #[error("Failed to deserialize response from url '{url}' due to: {cause}")]
     ResponseDeserialization { url: String, cause: reqwest::Error },

@@ -1,4 +1,8 @@
-use ergo_lib::ergotree_ir::chain::ergo_box::ErgoBox;
+use ergo_lib::{
+    chain::transaction::unsigned::UnsignedTransaction, ergotree_ir::chain::ergo_box::ErgoBox,
+};
+
+use crate::Error;
 
 use super::{endpoints::NodeEndpoint, NodeError};
 
@@ -12,7 +16,7 @@ impl<'a> NodeExtension<'a> {
         Self { endpoints }
     }
 
-    async fn get_utxos(&self) -> Result<Vec<ErgoBox>, crate::Error> {
+    async fn get_utxos(&self) -> Result<Vec<ErgoBox>, Error> {
         Ok(self
             .endpoints
             .wallet()?
@@ -28,7 +32,7 @@ impl<'a> NodeExtension<'a> {
         &self,
         nano_erg_amount: u64,
         boxes: Vec<ErgoBox>,
-    ) -> Result<Vec<ErgoBox>, crate::Error> {
+    ) -> Result<Vec<ErgoBox>, Error> {
         let mut running_total = 0;
         let utxos = boxes
             .into_iter()
@@ -51,7 +55,17 @@ impl<'a> NodeExtension<'a> {
     pub async fn get_utxos_summing_amount(
         &self,
         nano_erg_amount: u64,
-    ) -> Result<Vec<ErgoBox>, crate::Error> {
+    ) -> Result<Vec<ErgoBox>, Error> {
         self.take_until_amount(nano_erg_amount, self.get_utxos().await?)
+    }
+
+    pub async fn sign_and_submit(&self, unsigned_tx: UnsignedTransaction) -> Result<String, Error> {
+        let signed_tx = self
+            .endpoints
+            .wallet()?
+            .transaction()?
+            .sign(unsigned_tx, None, None)
+            .await?;
+        self.endpoints.transactions()?.submit(signed_tx).await
     }
 }

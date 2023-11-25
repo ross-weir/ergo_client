@@ -1,7 +1,7 @@
 pub mod boxes;
 pub mod transaction;
 
-use self::boxes::BoxesEndpoint;
+use self::{boxes::BoxesEndpoint, transaction::TransactionEndpoint};
 use crate::Error;
 use reqwest::{Client, Url};
 use serde::Deserialize;
@@ -18,6 +18,10 @@ impl<'a> WalletEndpoint<'a> {
             .map_err(|_| Error::AppendPathSegment)?
             .push("wallet");
         Ok(Self { client, url })
+    }
+
+    pub fn transaction(&self) -> Result<TransactionEndpoint, Error> {
+        TransactionEndpoint::new(&self.client, self.url.clone())
     }
 
     pub fn boxes(&self) -> Result<BoxesEndpoint, Error> {

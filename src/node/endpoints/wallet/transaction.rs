@@ -5,16 +5,15 @@ use ergo_lib::ergotree_ir::chain::ergo_box::ErgoBox;
 use ergo_lib::ergotree_ir::serialization::{SigmaSerializable, SigmaSerializationError};
 use reqwest::{Client, Url};
 use serde::{Deserialize, Serialize};
-use std::rc::Rc;
 
 #[derive(Debug)]
-pub struct TransactionEndpoint {
-    client: Rc<Client>,
+pub struct TransactionEndpoint<'a> {
+    client: &'a Client,
     url: Url,
 }
 
-impl TransactionEndpoint {
-    pub fn new(client: Rc<Client>, mut url: Url) -> Result<Self, Error> {
+impl<'a> TransactionEndpoint<'a> {
+    pub fn new(client: &'a Client, mut url: Url) -> Result<Self, Error> {
         url.path_segments_mut()
             .map_err(|_| Error::AppendPathSegment)?
             .push("transaction");
@@ -30,7 +29,7 @@ pub struct SignRequest {
     data_inputs_raw: Vec<String>,
 }
 
-impl TransactionEndpoint {
+impl<'a> TransactionEndpoint<'a> {
     pub fn to_raw_boxes(&self, boxes: Vec<ErgoBox>) -> Result<Vec<String>, Error> {
         Ok(boxes
             .iter()
