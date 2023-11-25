@@ -5,29 +5,23 @@ use self::boxes::BoxesEndpoint;
 use crate::Error;
 use reqwest::{Client, Url};
 use serde::Deserialize;
-use std::rc::Rc;
 
 #[derive(Debug, Clone)]
-pub struct WalletEndpoint {
-    client: Rc<Client>,
+pub struct WalletEndpoint<'a> {
+    client: &'a Client,
     url: Url,
-    boxes: BoxesEndpoint,
 }
 
-impl WalletEndpoint {
-    pub fn new(client: Rc<Client>, mut url: Url) -> Result<Self, crate::Error> {
+impl<'a> WalletEndpoint<'a> {
+    pub fn new(client: &'a Client, mut url: Url) -> Result<Self, crate::Error> {
         url.path_segments_mut()
             .map_err(|_| Error::AppendPathSegment)?
             .push("wallet");
-        Ok(Self {
-            client: client.clone(),
-            url: url.clone(),
-            boxes: BoxesEndpoint::new(client, url)?,
-        })
+        Ok(Self { client, url })
     }
 
-    pub fn boxes(&self) -> &BoxesEndpoint {
-        &self.boxes
+    pub fn boxes(&self) -> Result<BoxesEndpoint, Error> {
+        BoxesEndpoint::new(&self.client, self.url.clone())
     }
 }
 
@@ -41,7 +35,7 @@ pub struct StatusResponse {
     pub error: String,
 }
 
-impl WalletEndpoint {
+impl<'a> WalletEndpoint<'a> {
     pub async fn status(&self) -> Result<StatusResponse, Error> {
         let mut url = self.url.clone();
         url.path_segments_mut()

@@ -14,9 +14,7 @@ pub enum NodeError {
 
 #[derive(Debug)]
 pub struct NodeClient {
-    url: Url,
     endpoints: NodeEndpoint,
-    extensions: NodeExtension,
 }
 
 impl NodeClient {
@@ -29,23 +27,16 @@ impl NodeClient {
             .timeout(timeout)
             .build()
             .map_err(|e| Error::BuildClient(e))?;
-        let endpoints = NodeEndpoint::new(client, url.clone())?;
         Ok(Self {
-            url,
-            extensions: NodeExtension::new(endpoints.clone()),
-            endpoints,
+            endpoints: NodeEndpoint::new(client, url)?,
         })
-    }
-
-    pub fn base_url(&self) -> Url {
-        self.url.clone()
     }
 
     pub fn endpoints(&self) -> &NodeEndpoint {
         &self.endpoints
     }
 
-    pub fn extensions(&self) -> &NodeExtension {
-        &self.extensions
+    pub fn extensions(&self) -> NodeExtension {
+        NodeExtension::new(&self.endpoints)
     }
 }

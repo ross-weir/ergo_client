@@ -2,16 +2,15 @@ use crate::Error;
 use ergo_lib::ergotree_ir::chain::ergo_box::ErgoBox;
 use reqwest::{Client, Url};
 use serde::{Deserialize, Serialize};
-use std::rc::Rc;
 
 #[derive(Debug, Clone)]
-pub struct BoxesEndpoint {
-    client: Rc<Client>,
+pub struct BoxesEndpoint<'a> {
+    client: &'a Client,
     url: Url,
 }
 
-impl BoxesEndpoint {
-    pub fn new(client: Rc<Client>, mut url: Url) -> Result<Self, Error> {
+impl<'a> BoxesEndpoint<'a> {
+    pub fn new(client: &'a Client, mut url: Url) -> Result<Self, Error> {
         url.path_segments_mut()
             .map_err(|_| Error::AppendPathSegment)?
             .push("boxes");
@@ -51,7 +50,7 @@ impl Default for UnspentQuery {
     }
 }
 
-impl BoxesEndpoint {
+impl<'a> BoxesEndpoint<'a> {
     pub async fn unspent(
         &self,
         query: Option<UnspentQuery>,

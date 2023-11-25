@@ -3,20 +3,20 @@ use ergo_lib::ergotree_ir::chain::ergo_box::ErgoBox;
 use super::{endpoints::NodeEndpoint, NodeError};
 
 #[derive(Debug)]
-pub struct NodeExtension {
-    endpoints: NodeEndpoint,
+pub struct NodeExtension<'a> {
+    endpoints: &'a NodeEndpoint,
 }
 
-impl NodeExtension {
-    pub fn new(endpoints: NodeEndpoint) -> Self {
+impl<'a> NodeExtension<'a> {
+    pub fn new(endpoints: &'a NodeEndpoint) -> Self {
         Self { endpoints }
     }
 
     async fn get_utxos(&self) -> Result<Vec<ErgoBox>, crate::Error> {
         Ok(self
             .endpoints
-            .wallet()
-            .boxes()
+            .wallet()?
+            .boxes()?
             .unspent(None)
             .await?
             .into_iter()
@@ -33,8 +33,9 @@ impl NodeExtension {
         let utxos = boxes
             .into_iter()
             .take_while(|b| {
+                let keep_taking = running_total < nano_erg_amount;
                 running_total += b.value.as_u64();
-                running_total < nano_erg_amount
+                keep_taking
             })
             .collect::<Vec<_>>();
         if running_total >= nano_erg_amount {
@@ -47,7 +48,7 @@ impl NodeExtension {
         }
     }
 
-    pub async fn get_utxos_totaling_amount(
+    pub async fn get_utxos_summing_amount(
         &self,
         nano_erg_amount: u64,
     ) -> Result<Vec<ErgoBox>, crate::Error> {

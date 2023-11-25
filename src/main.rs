@@ -11,8 +11,10 @@ pub async fn main() {
     )
     .unwrap();
     let endpoints = client.endpoints();
+    let extensions = client.extensions();
 
-    dbg!(endpoints.root().info().await.unwrap());
-    dbg!(endpoints.wallet().status().await.unwrap());
-    dbg!(endpoints.wallet().boxes().unspent(None).await.unwrap());
+    dbg!(endpoints.root().unwrap().info().await.unwrap());
+    dbg!(endpoints.wallet().unwrap().status().await.unwrap());
+    dbg!(endpoints.wallet().unwrap().boxes().unwrap().unspent(None).await.unwrap());
+    dbg!(extensions.get_utxos_summing_amount(10000).await.unwrap());
 }

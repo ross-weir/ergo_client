@@ -2,8 +2,6 @@ pub mod root;
 pub mod transactions;
 pub mod wallet;
 
-use std::rc::Rc;
-
 use reqwest::{Client, Url};
 use serde::Serialize;
 
@@ -27,30 +25,28 @@ impl Default for NodePaginationQuery {
 
 #[derive(Debug, Clone)]
 pub struct NodeEndpoint {
-    root: RootEndpoint,
-    wallet: WalletEndpoint,
-    transactions: TransactionsEndpoint,
+    client: Client,
+    url: Url,
 }
 
 impl NodeEndpoint {
     pub fn new(client: Client, url: Url) -> Result<Self, crate::Error> {
-        let shared_client = Rc::new(client);
-        Ok(Self {
-            root: RootEndpoint::new(shared_client.clone(), url.clone())?,
-            wallet: WalletEndpoint::new(shared_client.clone(), url.clone())?,
-            transactions: TransactionsEndpoint::new(shared_client, url.clone())?,
-        })
+        Ok(Self { client, url })
     }
 
-    pub fn root(&self) -> &RootEndpoint {
-        &self.root
+    pub fn url(&self) -> &Url {
+        &self.url
     }
 
-    pub fn wallet(&self) -> &WalletEndpoint {
-        &self.wallet
+    pub fn root(&self) -> Result<RootEndpoint, crate::Error> {
+        RootEndpoint::new(&self.client, self.url.clone())
     }
 
-    pub fn transactions(&self) -> &TransactionsEndpoint {
-        &self.transactions
+    pub fn wallet(&self) -> Result<WalletEndpoint, crate::Error> {
+        WalletEndpoint::new(&self.client, self.url.clone())
+    }
+
+    pub fn transactions(&self) -> Result<TransactionsEndpoint, crate::Error> {
+        TransactionsEndpoint::new(&self.client, self.url.clone())
     }
 }

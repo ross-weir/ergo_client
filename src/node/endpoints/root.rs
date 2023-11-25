@@ -1,17 +1,15 @@
-use std::rc::Rc;
-
 use crate::Error;
 use reqwest::{Client, Url};
 use serde::Deserialize;
 
 #[derive(Debug, Clone)]
-pub struct RootEndpoint {
-    client: Rc<Client>,
+pub struct RootEndpoint<'a> {
+    client: &'a Client,
     url: Url,
 }
 
-impl RootEndpoint {
-    pub fn new(client: Rc<Client>, url: Url) -> Result<Self, Error> {
+impl<'a> RootEndpoint<'a> {
+    pub fn new(client: &'a Client, url: Url) -> Result<Self, Error> {
         Ok(Self { client, url })
     }
 }
@@ -23,7 +21,7 @@ pub struct InfoResponse {
     pub full_height: i32,
 }
 
-impl RootEndpoint {
+impl<'a> RootEndpoint<'a> {
     pub async fn info(&self) -> Result<InfoResponse, Error> {
         let url = self
             .url
