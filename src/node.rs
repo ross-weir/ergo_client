@@ -34,6 +34,9 @@ impl NodeClient {
         let client = Client::builder()
             .default_headers(headers)
             .timeout(timeout)
+            // outputs all connection events if `trace` log level is set for `reqwest` crate
+            // useful to debug response errors
+            .connection_verbose(true)
             .build()
             .map_err(|e| Error::BuildClient(e))?;
         Ok(Self {
