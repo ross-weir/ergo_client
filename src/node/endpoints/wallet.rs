@@ -63,7 +63,7 @@ impl<'a> WalletEndpoint<'a> {
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct UnlockRequest {
-    password: String,
+    pass: String,
 }
 
 impl<'a> WalletEndpoint<'a> {
@@ -72,7 +72,7 @@ impl<'a> WalletEndpoint<'a> {
         url.path_segments_mut()
             .map_err(|_| Error::AppendPathSegment)?
             .push("unlock");
-        let body = UnlockRequest { password };
+        let body = UnlockRequest { pass: password };
 
         self.client
             .post(url.clone())
