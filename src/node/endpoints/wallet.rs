@@ -4,7 +4,7 @@ pub mod transaction;
 use self::{boxes::BoxesEndpoint, transaction::TransactionEndpoint};
 use crate::Error;
 use reqwest::{Client, Url};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone)]
 pub struct WalletEndpoint<'a> {
@@ -57,5 +57,29 @@ impl<'a> WalletEndpoint<'a> {
                 url: url.to_string(),
                 source: e,
             })
+    }
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UnlockRequest {
+    password: String,
+}
+
+impl<'a> WalletEndpoint<'a> {
+    pub async fn unlock(&self, password: String) -> Result<(), Error> {
+        let mut url = self.url.clone();
+        url.path_segments_mut()
+            .map_err(|_| Error::AppendPathSegment)?
+            .push("unlock");
+        let body = UnlockRequest { password };
+
+        self.client
+            .post(url.clone())
+            .json(&body)
+            .send()
+            .await?
+            .error_for_status()?;
+        Ok(())
     }
 }
