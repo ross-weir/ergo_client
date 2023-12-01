@@ -4,7 +4,7 @@ pub mod extensions;
 use self::{endpoints::NodeEndpoint, extensions::NodeExtension};
 use crate::Error;
 use reqwest::{
-    header::{HeaderMap, InvalidHeaderValue},
+    header::{HeaderMap, HeaderValue, InvalidHeaderValue},
     Client, Url,
 };
 use std::time::Duration;
@@ -27,10 +27,9 @@ impl NodeClient {
     pub fn from_url_str(url_str: &str, api_key: String, timeout: Duration) -> Result<Self, Error> {
         let url = Url::parse(url_str)?;
         let mut headers = HeaderMap::new();
-        headers.insert(
-            "api_key",
-            api_key.clone().try_into().map_err(NodeError::from)?,
-        );
+        let mut key_header_val = HeaderValue::from_str(&api_key).map_err(NodeError::from)?;
+        key_header_val.set_sensitive(true);
+        headers.insert("api_key", key_header_val);
         let client = Client::builder()
             .default_headers(headers)
             .timeout(timeout)
