@@ -1,4 +1,4 @@
-use crate::Error;
+use crate::{node::process_response, Error};
 use ergo_lib::ergotree_ir::chain::ergo_box::ErgoBox;
 use reqwest::{Client, Url};
 use serde::{Deserialize, Serialize};
@@ -60,17 +60,13 @@ impl<'a> BoxesEndpoint<'a> {
             .map_err(|_| Error::AppendPathSegment)?
             .push("unspent");
 
-        self.client
-            .get(url.clone())
-            .query(&query.unwrap_or_default())
-            .send()
-            .await?
-            .error_for_status()?
-            .json()
-            .await
-            .map_err(|e| Error::ResponseDeserialization {
-                url: url.to_string(),
-                source: e,
-            })
+        process_response(
+            self.client
+                .get(url.clone())
+                .query(&query.unwrap_or_default())
+                .send()
+                .await?,
+        )
+        .await
     }
 }

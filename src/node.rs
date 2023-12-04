@@ -7,6 +7,7 @@ use reqwest::{
     header::{HeaderMap, HeaderValue, InvalidHeaderValue},
     Client, Url,
 };
+use serde::{de::DeserializeOwned, Deserialize};
 use std::time::Duration;
 
 #[derive(thiserror::Error, Debug)]
@@ -16,6 +17,44 @@ pub enum NodeError {
 
     #[error("Specified API key is not a valid header value")]
     InvalidApiKey(#[from] InvalidHeaderValue),
+
+    /// Node returned a 4xx or 5xx error code.
+    ///
+    /// Returns the description of the error returned by the node
+    /// in the `detail` field in the JSON response.
+    #[error("Node returned error: {0}")]
+    RequestFailed(String),
+
+    #[error("Failed to deserialize error object returned by node API")]
+    ErrorObjectDeserialization(#[source] reqwest::Error),
+}
+
+/// Error object returned by the nodes API.
+#[derive(Debug, Deserialize)]
+pub struct NodeApiError {
+    /// Status code
+    pub error: u32,
+    /// Short text that sometimes describes the error, other times its unhelpful
+    pub reason: String,
+    /// Usually a more helpful string describing what error occurred
+    pub detail: String,
+}
+
+pub(crate) async fn process_response<T: DeserializeOwned>(
+    response: reqwest::Response,
+) -> Result<T, crate::Error> {
+    if response.status().is_success() {
+        response
+            .json::<T>()
+            .await
+            .map_err(crate::Error::ResponseDeserialization)
+    } else {
+        let node_err = response
+            .json::<NodeApiError>()
+            .await
+            .map_err(NodeError::ErrorObjectDeserialization)?;
+        Err(NodeError::RequestFailed(node_err.detail).into())
+    }
 }
 
 #[derive(Debug, Clone)]

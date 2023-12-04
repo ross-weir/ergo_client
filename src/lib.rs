@@ -16,12 +16,8 @@ pub enum Error {
     #[error("HTTP request failed")]
     Request(#[from] reqwest::Error),
 
-    #[error("Failed to deserialize response from URL '{url}'")]
-    ResponseDeserialization {
-        url: String,
-        #[source]
-        source: reqwest::Error,
-    },
+    #[error("Failed to deserialize response")]
+    ResponseDeserialization(#[source] reqwest::Error),
 
     #[error("Failed to serialize to bytes")]
     SigmaSerialization(#[from] SigmaSerializationError),
