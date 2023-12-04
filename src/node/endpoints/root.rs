@@ -1,4 +1,4 @@
-use crate::Error;
+use crate::{node::process_response, Error};
 use reqwest::{Client, Url};
 use serde::Deserialize;
 
@@ -24,16 +24,6 @@ pub struct InfoResponse {
 impl<'a> RootEndpoint<'a> {
     pub async fn info(&self) -> Result<InfoResponse, Error> {
         let url = self.url.join("info")?;
-        self.client
-            .get(url.clone())
-            .send()
-            .await?
-            .error_for_status()?
-            .json()
-            .await
-            .map_err(|e| Error::ResponseDeserialization {
-                url: url.to_string(),
-                source: e,
-            })
+        process_response(self.client.get(url.clone()).send().await?).await
     }
 }

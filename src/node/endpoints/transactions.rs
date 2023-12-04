@@ -1,4 +1,4 @@
-use crate::Error;
+use crate::{node::process_response, Error};
 use ergo_lib::chain::transaction::Transaction;
 use reqwest::{Client, Url};
 
@@ -21,17 +21,6 @@ impl<'a> TransactionsEndpoint<'a> {
     /// POST /transactions
     /// Node returns the transaction id string directly, not inside an object or array
     pub async fn submit(&self, tx: Transaction) -> Result<String, Error> {
-        self.client
-            .post(self.url.clone())
-            .json(&tx)
-            .send()
-            .await?
-            .error_for_status()?
-            .json()
-            .await
-            .map_err(|e| Error::ResponseDeserialization {
-                url: self.url.to_string(),
-                source: e,
-            })
+        process_response(self.client.post(self.url.clone()).json(&tx).send().await?).await
     }
 }

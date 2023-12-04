@@ -3,13 +3,12 @@ pub mod script;
 pub mod transactions;
 pub mod wallet;
 
+use self::root::RootEndpoint;
+use self::script::ScriptEndpoint;
+use self::transactions::TransactionsEndpoint;
+use self::wallet::WalletEndpoint;
 use reqwest::{Client, Url};
 use serde::Serialize;
-
-use self::{
-    root::RootEndpoint, script::ScriptEndpoint, transactions::TransactionsEndpoint,
-    wallet::WalletEndpoint,
-};
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]

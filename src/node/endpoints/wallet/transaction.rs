@@ -1,3 +1,4 @@
+use crate::node::process_response;
 use crate::Error;
 use ergo_lib::chain::transaction::{unsigned::UnsignedTransaction, Transaction};
 use ergo_lib::ergotree_ir::chain::ergo_box::ErgoBox;
@@ -47,18 +48,6 @@ impl<'a> TransactionEndpoint<'a> {
             data_inputs_raw: data_inputs
                 .map(|boxes| boxes.iter().map(|b| String::from(b.box_id())).collect()),
         };
-
-        self.client
-            .post(url.clone())
-            .json(&body)
-            .send()
-            .await?
-            .error_for_status()?
-            .json()
-            .await
-            .map_err(|e| Error::ResponseDeserialization {
-                url: url.to_string(),
-                source: e,
-            })
+        process_response(self.client.post(url.clone()).json(&body).send().await?).await
     }
 }

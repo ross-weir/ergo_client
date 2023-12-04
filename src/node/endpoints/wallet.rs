@@ -2,7 +2,7 @@ pub mod boxes;
 pub mod transaction;
 
 use self::{boxes::BoxesEndpoint, transaction::TransactionEndpoint};
-use crate::Error;
+use crate::{node::process_response, Error};
 use reqwest::{Client, Url};
 use serde::{Deserialize, Serialize};
 
@@ -45,18 +45,7 @@ impl<'a> WalletEndpoint<'a> {
         url.path_segments_mut()
             .map_err(|_| Error::AppendPathSegment)?
             .push("status");
-
-        self.client
-            .get(url.clone())
-            .send()
-            .await?
-            .error_for_status()?
-            .json()
-            .await
-            .map_err(|e| Error::ResponseDeserialization {
-                url: url.to_string(),
-                source: e,
-            })
+        process_response(self.client.get(url.clone()).send().await?).await
     }
 }
 
@@ -73,13 +62,8 @@ impl<'a> WalletEndpoint<'a> {
             .map_err(|_| Error::AppendPathSegment)?
             .push("unlock");
         let body = UnlockRequest { pass: password };
-
-        self.client
-            .post(url.clone())
-            .json(&body)
-            .send()
-            .await?
-            .error_for_status()?;
+        // Respods with a string "OK"
+        process_response::<String>(self.client.post(url.clone()).json(&body).send().await?).await?;
         Ok(())
     }
 }

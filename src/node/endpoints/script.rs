@@ -1,4 +1,4 @@
-use crate::Error;
+use crate::{node::process_response, Error};
 use reqwest::{Client, Url};
 use serde::Deserialize;
 use serde_json::json;
@@ -30,19 +30,11 @@ impl<'a> ScriptEndpoint<'a> {
             .map_err(|_| Error::AppendPathSegment)?
             .push("addressToTree")
             .push(network_address);
-        Ok(self
-            .client
-            .get(url.clone())
-            .send()
-            .await?
-            .error_for_status()?
-            .json::<AddressToTreeResponse>()
-            .await
-            .map_err(|e| Error::ResponseDeserialization {
-                url: url.to_string(),
-                source: e,
-            })?
-            .tree)
+        Ok(
+            process_response::<AddressToTreeResponse>(self.client.get(url.clone()).send().await?)
+                .await?
+                .tree,
+        )
     }
 }
 
@@ -61,19 +53,10 @@ impl<'a> ScriptEndpoint<'a> {
         let body = json!({
             "source": source
         });
-        Ok(self
-            .client
-            .post(url.clone())
-            .json(&body)
-            .send()
-            .await?
-            .error_for_status()?
-            .json::<P2sAddressResponse>()
-            .await
-            .map_err(|e| Error::ResponseDeserialization {
-                url: url.to_string(),
-                source: e,
-            })?
-            .address)
+        Ok(process_response::<P2sAddressResponse>(
+            self.client.post(url.clone()).json(&body).send().await?,
+        )
+        .await?
+        .address)
     }
 }
