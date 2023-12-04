@@ -48,6 +48,6 @@ impl<'a> TransactionEndpoint<'a> {
             data_inputs_raw: data_inputs
                 .map(|boxes| boxes.iter().map(|b| String::from(b.box_id())).collect()),
         };
-        process_response(self.client.post(url.clone()).json(&body).send().await?).await
+        process_response(self.client.post(url).json(&body).send().await?).await
     }
 }

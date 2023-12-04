@@ -62,7 +62,7 @@ impl<'a> BoxesEndpoint<'a> {
 
         process_response(
             self.client
-                .get(url.clone())
+                .get(url)
                 .query(&query.unwrap_or_default())
                 .send()
                 .await?,

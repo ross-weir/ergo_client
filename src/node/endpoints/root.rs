@@ -24,6 +24,6 @@ pub struct InfoResponse {
 impl<'a> RootEndpoint<'a> {
     pub async fn info(&self) -> Result<InfoResponse, Error> {
         let url = self.url.join("info")?;
-        process_response(self.client.get(url.clone()).send().await?).await
+        process_response(self.client.get(url).send().await?).await
     }
 }

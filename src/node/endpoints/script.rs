@@ -31,7 +31,7 @@ impl<'a> ScriptEndpoint<'a> {
             .push("addressToTree")
             .push(network_address);
         Ok(
-            process_response::<AddressToTreeResponse>(self.client.get(url.clone()).send().await?)
+            process_response::<AddressToTreeResponse>(self.client.get(url).send().await?)
                 .await?
                 .tree,
         )
@@ -53,10 +53,10 @@ impl<'a> ScriptEndpoint<'a> {
         let body = json!({
             "source": source
         });
-        Ok(process_response::<P2sAddressResponse>(
-            self.client.post(url.clone()).json(&body).send().await?,
+        Ok(
+            process_response::<P2sAddressResponse>(self.client.post(url).json(&body).send().await?)
+                .await?
+                .address,
         )
-        .await?
-        .address)
     }
 }

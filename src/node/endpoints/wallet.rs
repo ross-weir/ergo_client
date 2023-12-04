@@ -45,7 +45,7 @@ impl<'a> WalletEndpoint<'a> {
         url.path_segments_mut()
             .map_err(|_| Error::AppendPathSegment)?
             .push("status");
-        process_response(self.client.get(url.clone()).send().await?).await
+        process_response(self.client.get(url).send().await?).await
     }
 }
 
@@ -63,7 +63,7 @@ impl<'a> WalletEndpoint<'a> {
             .push("unlock");
         let body = UnlockRequest { pass: password };
         // Respods with a string "OK"
-        process_response::<String>(self.client.post(url.clone()).json(&body).send().await?).await?;
+        process_response::<String>(self.client.post(url).json(&body).send().await?).await?;
         Ok(())
     }
 }
