@@ -1,5 +1,5 @@
 use ergo_lib::{
-    chain::transaction::unsigned::UnsignedTransaction,
+    chain::transaction::{unsigned::UnsignedTransaction, Transaction},
     ergotree_ir::{
         chain::{address::NetworkAddress, ergo_box::ErgoBox},
         ergo_tree::ErgoTree,
@@ -63,14 +63,20 @@ impl<'a> NodeExtension<'a> {
         self.take_until_amount(nano_erg_amount, self.get_utxos().await?)
     }
 
-    pub async fn sign_and_submit(&self, unsigned_tx: UnsignedTransaction) -> Result<String, Error> {
+    /// Signs and submits the supplied transaction.
+    /// Returns the signed transaction that was submitted.
+    pub async fn sign_and_submit(
+        &self,
+        unsigned_tx: UnsignedTransaction,
+    ) -> Result<Transaction, Error> {
         let signed_tx = self
             .endpoints
             .wallet()?
             .transaction()?
             .sign(unsigned_tx, None, None)
             .await?;
-        self.endpoints.transactions()?.submit(signed_tx).await
+        self.endpoints.transactions()?.submit(&signed_tx).await?;
+        Ok(signed_tx)
     }
 
     /// Compiles the provided Ergo Script source code into a ErgoTree instance
