@@ -20,7 +20,7 @@ impl<'a> TransactionsEndpoint<'a> {
 impl<'a> TransactionsEndpoint<'a> {
     /// POST /transactions
     /// Node returns the transaction id string directly, not inside an object or array
-    pub async fn submit(&self, tx: Transaction) -> Result<String, Error> {
+    pub async fn submit(&self, tx: &Transaction) -> Result<String, Error> {
         process_response(self.client.post(self.url.clone()).json(&tx).send().await?).await
     }
 }
