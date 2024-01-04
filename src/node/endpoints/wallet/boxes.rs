@@ -1,4 +1,7 @@
-use crate::{node::process_response, Error};
+use crate::{
+    common::CoreError,
+    node::{process_response, NodeError},
+};
 use ergo_lib::ergotree_ir::chain::ergo_box::ErgoBox;
 use reqwest::{Client, Url};
 use serde::{Deserialize, Serialize};
@@ -10,9 +13,9 @@ pub struct BoxesEndpoint<'a> {
 }
 
 impl<'a> BoxesEndpoint<'a> {
-    pub fn new(client: &'a Client, mut url: Url) -> Result<Self, Error> {
+    pub fn new(client: &'a Client, mut url: Url) -> Result<Self, NodeError> {
         url.path_segments_mut()
-            .map_err(|_| Error::AppendPathSegment)?
+            .map_err(|_| CoreError::AppendPathSegment)?
             .push("boxes");
         Ok(Self { client, url })
     }
@@ -54,10 +57,10 @@ impl<'a> BoxesEndpoint<'a> {
     pub async fn unspent(
         &self,
         query: Option<UnspentQuery>,
-    ) -> Result<Vec<UnspentResponseEntry>, Error> {
+    ) -> Result<Vec<UnspentResponseEntry>, NodeError> {
         let mut url = self.url.clone();
         url.path_segments_mut()
-            .map_err(|_| Error::AppendPathSegment)?
+            .map_err(|_| CoreError::AppendPathSegment)?
             .push("unspent");
 
         process_response(
@@ -65,7 +68,8 @@ impl<'a> BoxesEndpoint<'a> {
                 .get(url)
                 .query(&query.unwrap_or_default())
                 .send()
-                .await?,
+                .await
+                .map_err(CoreError::Http)?,
         )
         .await
     }

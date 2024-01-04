@@ -1,5 +1,5 @@
-use crate::node::process_response;
-use crate::Error;
+use crate::common::CoreError;
+use crate::node::{process_response, NodeError};
 use ergo_lib::chain::transaction::{unsigned::UnsignedTransaction, Transaction};
 use ergo_lib::ergotree_ir::chain::ergo_box::ErgoBox;
 use reqwest::{Client, Url};
@@ -12,9 +12,9 @@ pub struct TransactionEndpoint<'a> {
 }
 
 impl<'a> TransactionEndpoint<'a> {
-    pub fn new(client: &'a Client, mut url: Url) -> Result<Self, Error> {
+    pub fn new(client: &'a Client, mut url: Url) -> Result<Self, NodeError> {
         url.path_segments_mut()
-            .map_err(|_| Error::AppendPathSegment)?
+            .map_err(|_| CoreError::AppendPathSegment)?
             .push("transaction");
         Ok(Self { client, url })
     }
@@ -36,10 +36,10 @@ impl<'a> TransactionEndpoint<'a> {
         unsigned_tx: UnsignedTransaction,
         inputs: Option<Vec<ErgoBox>>,
         data_inputs: Option<Vec<ErgoBox>>,
-    ) -> Result<Transaction, Error> {
+    ) -> Result<Transaction, NodeError> {
         let mut url = self.url.clone();
         url.path_segments_mut()
-            .map_err(|_| Error::AppendPathSegment)?
+            .map_err(|_| CoreError::AppendPathSegment)?
             .push("sign");
         let body = SignRequest {
             tx: unsigned_tx,
@@ -48,6 +48,14 @@ impl<'a> TransactionEndpoint<'a> {
             data_inputs_raw: data_inputs
                 .map(|boxes| boxes.iter().map(|b| String::from(b.box_id())).collect()),
         };
-        process_response(self.client.post(url).json(&body).send().await?).await
+        process_response(
+            self.client
+                .post(url)
+                .json(&body)
+                .send()
+                .await
+                .map_err(CoreError::Http)?,
+        )
+        .await
     }
 }

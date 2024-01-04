@@ -1,4 +1,7 @@
-use crate::{node::process_response, Error};
+use crate::{
+    common::CoreError,
+    node::{process_response, NodeError},
+};
 use reqwest::{Client, Url};
 use serde::Deserialize;
 use serde_json::json;
@@ -10,9 +13,9 @@ pub struct ScriptEndpoint<'a> {
 }
 
 impl<'a> ScriptEndpoint<'a> {
-    pub fn new(client: &'a Client, mut url: Url) -> Result<Self, Error> {
+    pub fn new(client: &'a Client, mut url: Url) -> Result<Self, NodeError> {
         url.path_segments_mut()
-            .map_err(|_| Error::AppendPathSegment)?
+            .map_err(|_| CoreError::AppendPathSegment)?
             .push("script");
         Ok(Self { client, url })
     }
@@ -24,17 +27,17 @@ struct AddressToTreeResponse {
 }
 
 impl<'a> ScriptEndpoint<'a> {
-    pub async fn address_to_tree(&self, network_address: &str) -> Result<String, Error> {
+    pub async fn address_to_tree(&self, network_address: &str) -> Result<String, NodeError> {
         let mut url = self.url.clone();
         url.path_segments_mut()
-            .map_err(|_| Error::AppendPathSegment)?
+            .map_err(|_| CoreError::AppendPathSegment)?
             .push("addressToTree")
             .push(network_address);
-        Ok(
-            process_response::<AddressToTreeResponse>(self.client.get(url).send().await?)
-                .await?
-                .tree,
+        Ok(process_response::<AddressToTreeResponse>(
+            self.client.get(url).send().await.map_err(CoreError::Http)?,
         )
+        .await?
+        .tree)
     }
 }
 
@@ -45,18 +48,23 @@ struct P2sAddressResponse {
 
 impl<'a> ScriptEndpoint<'a> {
     /// Compiles the provided ErgoScript source code to a network encoded address.
-    pub async fn p2s_address(&self, source: &str) -> Result<String, Error> {
+    pub async fn p2s_address(&self, source: &str) -> Result<String, NodeError> {
         let mut url = self.url.clone();
         url.path_segments_mut()
-            .map_err(|_| Error::AppendPathSegment)?
+            .map_err(|_| CoreError::AppendPathSegment)?
             .push("p2sAddress");
         let body = json!({
             "source": source
         });
-        Ok(
-            process_response::<P2sAddressResponse>(self.client.post(url).json(&body).send().await?)
-                .await?
-                .address,
+        Ok(process_response::<P2sAddressResponse>(
+            self.client
+                .post(url)
+                .json(&body)
+                .send()
+                .await
+                .map_err(CoreError::Http)?,
         )
+        .await?
+        .address)
     }
 }

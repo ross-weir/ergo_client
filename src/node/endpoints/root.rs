@@ -1,4 +1,7 @@
-use crate::{node::process_response, Error};
+use crate::{
+    common::CoreError,
+    node::{process_response, NodeError},
+};
 use reqwest::{Client, Url};
 use serde::Deserialize;
 
@@ -9,7 +12,7 @@ pub struct RootEndpoint<'a> {
 }
 
 impl<'a> RootEndpoint<'a> {
-    pub fn new(client: &'a Client, url: Url) -> Result<Self, Error> {
+    pub fn new(client: &'a Client, url: Url) -> Result<Self, NodeError> {
         Ok(Self { client, url })
     }
 }
@@ -22,8 +25,8 @@ pub struct InfoResponse {
 }
 
 impl<'a> RootEndpoint<'a> {
-    pub async fn info(&self) -> Result<InfoResponse, Error> {
-        let url = self.url.join("info")?;
-        process_response(self.client.get(url).send().await?).await
+    pub async fn info(&self) -> Result<InfoResponse, NodeError> {
+        let url = self.url.join("info").map_err(CoreError::UrlParse)?;
+        process_response(self.client.get(url).send().await.map_err(CoreError::Http)?).await
     }
 }

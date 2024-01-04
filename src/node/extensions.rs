@@ -1,3 +1,4 @@
+use super::{endpoints::NodeEndpoint, NodeError};
 use ergo_lib::{
     chain::transaction::{unsigned::UnsignedTransaction, Transaction},
     ergotree_ir::{
@@ -5,10 +6,6 @@ use ergo_lib::{
         ergo_tree::ErgoTree,
     },
 };
-
-use crate::Error;
-
-use super::{endpoints::NodeEndpoint, NodeError};
 
 #[derive(Debug)]
 pub struct NodeExtension<'a> {
@@ -20,7 +17,7 @@ impl<'a> NodeExtension<'a> {
         Self { endpoints }
     }
 
-    async fn get_utxos(&self) -> Result<Vec<ErgoBox>, Error> {
+    async fn get_utxos(&self) -> Result<Vec<ErgoBox>, NodeError> {
         Ok(self
             .endpoints
             .wallet()?
@@ -36,7 +33,7 @@ impl<'a> NodeExtension<'a> {
         &self,
         nano_erg_amount: u64,
         boxes: Vec<ErgoBox>,
-    ) -> Result<Vec<ErgoBox>, Error> {
+    ) -> Result<Vec<ErgoBox>, NodeError> {
         let mut running_total = 0;
         let utxos = boxes
             .into_iter()
@@ -59,7 +56,7 @@ impl<'a> NodeExtension<'a> {
     pub async fn get_utxos_summing_amount(
         &self,
         nano_erg_amount: u64,
-    ) -> Result<Vec<ErgoBox>, Error> {
+    ) -> Result<Vec<ErgoBox>, NodeError> {
         self.take_until_amount(nano_erg_amount, self.get_utxos().await?)
     }
 
@@ -68,7 +65,7 @@ impl<'a> NodeExtension<'a> {
     pub async fn sign_and_submit(
         &self,
         unsigned_tx: UnsignedTransaction,
-    ) -> Result<Transaction, Error> {
+    ) -> Result<Transaction, NodeError> {
         let signed_tx = self
             .endpoints
             .wallet()?
@@ -80,8 +77,12 @@ impl<'a> NodeExtension<'a> {
     }
 
     /// Compiles the provided Ergo Script source code into a ErgoTree instance
-    pub async fn compile_contract(&self, source: &str) -> Result<ErgoTree, Error> {
+    pub async fn compile_contract(&self, source: &str) -> Result<ErgoTree, NodeError> {
         let addr = self.endpoints.script()?.p2s_address(source).await?;
-        Ok(NetworkAddress::try_from(addr).unwrap().address().script()?)
+        Ok(NetworkAddress::try_from(addr)
+            .unwrap()
+            .address()
+            .script()
+            .unwrap())
     }
 }
