@@ -1,4 +1,3 @@
-use crate::common::CoreError;
 use crate::node::{process_response, NodeError};
 use ergo_lib::chain::transaction::{unsigned::UnsignedTransaction, Transaction};
 use ergo_lib::ergotree_ir::chain::ergo_box::ErgoBox;
@@ -14,7 +13,7 @@ pub struct TransactionEndpoint<'a> {
 impl<'a> TransactionEndpoint<'a> {
     pub fn new(client: &'a Client, mut url: Url) -> Result<Self, NodeError> {
         url.path_segments_mut()
-            .map_err(|_| CoreError::AppendPathSegment)?
+            .map_err(|_| NodeError::BaseUrl)?
             .push("transaction");
         Ok(Self { client, url })
     }
@@ -39,7 +38,7 @@ impl<'a> TransactionEndpoint<'a> {
     ) -> Result<Transaction, NodeError> {
         let mut url = self.url.clone();
         url.path_segments_mut()
-            .map_err(|_| CoreError::AppendPathSegment)?
+            .map_err(|_| NodeError::BaseUrl)?
             .push("sign");
         let body = SignRequest {
             tx: unsigned_tx,
@@ -54,7 +53,7 @@ impl<'a> TransactionEndpoint<'a> {
                 .json(&body)
                 .send()
                 .await
-                .map_err(CoreError::Http)?,
+                .map_err(NodeError::Http)?,
         )
         .await
     }

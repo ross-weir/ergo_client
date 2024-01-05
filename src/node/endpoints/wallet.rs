@@ -2,10 +2,7 @@ pub mod boxes;
 pub mod transaction;
 
 use self::{boxes::BoxesEndpoint, transaction::TransactionEndpoint};
-use crate::{
-    common::CoreError,
-    node::{process_response, NodeError},
-};
+use crate::node::{process_response, NodeError};
 use reqwest::{Client, Url};
 use serde::{Deserialize, Serialize};
 
@@ -18,7 +15,7 @@ pub struct WalletEndpoint<'a> {
 impl<'a> WalletEndpoint<'a> {
     pub fn new(client: &'a Client, mut url: Url) -> Result<Self, NodeError> {
         url.path_segments_mut()
-            .map_err(|_| CoreError::AppendPathSegment)?
+            .map_err(|_| NodeError::BaseUrl)?
             .push("wallet");
         Ok(Self { client, url })
     }
@@ -46,9 +43,9 @@ impl<'a> WalletEndpoint<'a> {
     pub async fn status(&self) -> Result<StatusResponse, NodeError> {
         let mut url = self.url.clone();
         url.path_segments_mut()
-            .map_err(|_| CoreError::AppendPathSegment)?
+            .map_err(|_| NodeError::BaseUrl)?
             .push("status");
-        process_response(self.client.get(url).send().await.map_err(CoreError::Http)?).await
+        process_response(self.client.get(url).send().await.map_err(NodeError::Http)?).await
     }
 }
 
@@ -62,7 +59,7 @@ impl<'a> WalletEndpoint<'a> {
     pub async fn unlock(&self, password: String) -> Result<(), NodeError> {
         let mut url = self.url.clone();
         url.path_segments_mut()
-            .map_err(|_| CoreError::AppendPathSegment)?
+            .map_err(|_| NodeError::BaseUrl)?
             .push("unlock");
         let body = UnlockRequest { pass: password };
         // Respods with a string "OK"
@@ -72,7 +69,7 @@ impl<'a> WalletEndpoint<'a> {
                 .json(&body)
                 .send()
                 .await
-                .map_err(CoreError::Http)?,
+                .map_err(NodeError::Http)?,
         )
         .await?;
         Ok(())

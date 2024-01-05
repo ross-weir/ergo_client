@@ -1,7 +1,4 @@
-use crate::{
-    common::CoreError,
-    node::{process_response, NodeError},
-};
+use crate::node::{process_response, NodeError};
 use ergo_lib::chain::transaction::Transaction;
 use reqwest::{Client, Url};
 
@@ -14,7 +11,7 @@ pub struct TransactionsEndpoint<'a> {
 impl<'a> TransactionsEndpoint<'a> {
     pub fn new(client: &'a Client, mut url: Url) -> Result<Self, NodeError> {
         url.path_segments_mut()
-            .map_err(|_| CoreError::AppendPathSegment)?
+            .map_err(|_| NodeError::BaseUrl)?
             .push("transactions");
         Ok(Self { client, url })
     }
@@ -30,7 +27,7 @@ impl<'a> TransactionsEndpoint<'a> {
                 .json(&tx)
                 .send()
                 .await
-                .map_err(CoreError::Http)?,
+                .map_err(NodeError::Http)?,
         )
         .await
     }

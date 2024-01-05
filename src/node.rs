@@ -2,7 +2,6 @@ pub mod endpoints;
 pub mod extensions;
 
 use self::{endpoints::NodeEndpoint, extensions::NodeExtension};
-use crate::common::CoreError;
 use reqwest::{
     header::{HeaderMap, HeaderValue, InvalidHeaderValue},
     Client, Url,
@@ -28,8 +27,20 @@ pub enum NodeError {
     #[error("Node returned error: {0}")]
     BadRequest(String),
 
-    #[error(transparent)]
-    Core(#[from] CoreError),
+    #[error("Error occurred while sending HTTP request")]
+    Http(#[source] reqwest::Error),
+
+    #[error("Failed to parse JSON")]
+    Json(#[source] reqwest::Error),
+
+    #[error("Failed to build HTTP client")]
+    Client(#[source] reqwest::Error),
+
+    #[error("Failed to parse URL")]
+    UrlParsing(#[from] url::ParseError),
+
+    #[error("Invalid base URL provided")]
+    BaseUrl,
 }
 
 /// Error object returned by the nodes API.
@@ -47,15 +58,12 @@ pub(crate) async fn process_response<T: DeserializeOwned>(
     response: reqwest::Response,
 ) -> Result<T, NodeError> {
     if response.status().is_success() {
-        Ok(response
-            .json::<T>()
-            .await
-            .map_err(CoreError::ResponseDeserialization)?)
+        Ok(response.json::<T>().await.map_err(NodeError::Json)?)
     } else {
         let node_err = response
             .json::<NodeApiError>()
             .await
-            .map_err(CoreError::ResponseDeserialization)?;
+            .map_err(NodeError::Json)?;
         Err(NodeError::BadRequest(node_err.detail).into())
     }
 }
@@ -71,7 +79,7 @@ impl NodeClient {
         api_key: String,
         timeout: Duration,
     ) -> Result<Self, NodeError> {
-        let url = Url::parse(url_str).map_err(CoreError::UrlParse)?;
+        let url = Url::parse(url_str)?;
         let mut headers = HeaderMap::new();
         let mut key_header_val =
             HeaderValue::from_str(&api_key).map_err(|e| NodeError::InvalidApiKey {
@@ -87,7 +95,7 @@ impl NodeClient {
             // useful to debug response errors
             .connection_verbose(true)
             .build()
-            .map_err(CoreError::BuildClient)?;
+            .map_err(NodeError::Client)?;
         Ok(Self {
             endpoints: NodeEndpoint::new(client, url),
         })
