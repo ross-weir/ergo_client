@@ -10,6 +10,8 @@ use self::wallet::WalletEndpoint;
 use reqwest::{Client, Url};
 use serde::Serialize;
 
+use super::NodeError;
+
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct NodePaginationQuery {
@@ -33,27 +35,27 @@ pub struct NodeEndpoint {
 }
 
 impl NodeEndpoint {
-    pub fn new(client: Client, url: Url) -> Result<Self, crate::Error> {
-        Ok(Self { client, url })
+    pub fn new(client: Client, url: Url) -> Self {
+        Self { client, url }
     }
 
     pub fn url(&self) -> &Url {
         &self.url
     }
 
-    pub fn root(&self) -> Result<RootEndpoint, crate::Error> {
+    pub fn root(&self) -> Result<RootEndpoint, NodeError> {
         RootEndpoint::new(&self.client, self.url.clone())
     }
 
-    pub fn wallet(&self) -> Result<WalletEndpoint, crate::Error> {
+    pub fn wallet(&self) -> Result<WalletEndpoint, NodeError> {
         WalletEndpoint::new(&self.client, self.url.clone())
     }
 
-    pub fn transactions(&self) -> Result<TransactionsEndpoint, crate::Error> {
+    pub fn transactions(&self) -> Result<TransactionsEndpoint, NodeError> {
         TransactionsEndpoint::new(&self.client, self.url.clone())
     }
 
-    pub fn script(&self) -> Result<ScriptEndpoint, crate::Error> {
+    pub fn script(&self) -> Result<ScriptEndpoint, NodeError> {
         ScriptEndpoint::new(&self.client, self.url.clone())
     }
 }

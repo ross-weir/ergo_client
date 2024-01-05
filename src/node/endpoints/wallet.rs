@@ -2,7 +2,7 @@ pub mod boxes;
 pub mod transaction;
 
 use self::{boxes::BoxesEndpoint, transaction::TransactionEndpoint};
-use crate::{node::process_response, Error};
+use crate::node::{process_response, NodeError};
 use reqwest::{Client, Url};
 use serde::{Deserialize, Serialize};
 
@@ -13,18 +13,18 @@ pub struct WalletEndpoint<'a> {
 }
 
 impl<'a> WalletEndpoint<'a> {
-    pub fn new(client: &'a Client, mut url: Url) -> Result<Self, crate::Error> {
+    pub fn new(client: &'a Client, mut url: Url) -> Result<Self, NodeError> {
         url.path_segments_mut()
-            .map_err(|_| Error::AppendPathSegment)?
+            .map_err(|_| NodeError::BaseUrl)?
             .push("wallet");
         Ok(Self { client, url })
     }
 
-    pub fn transaction(&self) -> Result<TransactionEndpoint, Error> {
+    pub fn transaction(&self) -> Result<TransactionEndpoint, NodeError> {
         TransactionEndpoint::new(&self.client, self.url.clone())
     }
 
-    pub fn boxes(&self) -> Result<BoxesEndpoint, Error> {
+    pub fn boxes(&self) -> Result<BoxesEndpoint, NodeError> {
         BoxesEndpoint::new(&self.client, self.url.clone())
     }
 }
@@ -40,12 +40,12 @@ pub struct StatusResponse {
 }
 
 impl<'a> WalletEndpoint<'a> {
-    pub async fn status(&self) -> Result<StatusResponse, Error> {
+    pub async fn status(&self) -> Result<StatusResponse, NodeError> {
         let mut url = self.url.clone();
         url.path_segments_mut()
-            .map_err(|_| Error::AppendPathSegment)?
+            .map_err(|_| NodeError::BaseUrl)?
             .push("status");
-        process_response(self.client.get(url).send().await?).await
+        process_response(self.client.get(url).send().await.map_err(NodeError::Http)?).await
     }
 }
 
@@ -56,14 +56,22 @@ pub struct UnlockRequest {
 }
 
 impl<'a> WalletEndpoint<'a> {
-    pub async fn unlock(&self, password: String) -> Result<(), Error> {
+    pub async fn unlock(&self, password: String) -> Result<(), NodeError> {
         let mut url = self.url.clone();
         url.path_segments_mut()
-            .map_err(|_| Error::AppendPathSegment)?
+            .map_err(|_| NodeError::BaseUrl)?
             .push("unlock");
         let body = UnlockRequest { pass: password };
         // Respods with a string "OK"
-        process_response::<String>(self.client.post(url).json(&body).send().await?).await?;
+        process_response::<String>(
+            self.client
+                .post(url)
+                .json(&body)
+                .send()
+                .await
+                .map_err(NodeError::Http)?,
+        )
+        .await?;
         Ok(())
     }
 }

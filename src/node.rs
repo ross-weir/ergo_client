@@ -2,7 +2,6 @@ pub mod endpoints;
 pub mod extensions;
 
 use self::{endpoints::NodeEndpoint, extensions::NodeExtension};
-use crate::Error;
 use reqwest::{
     header::{HeaderMap, HeaderValue, InvalidHeaderValue},
     Client, Url,
@@ -16,17 +15,32 @@ pub enum NodeError {
     InsufficientFunds { requested: u64, found: u64 },
 
     #[error("Specified API key is not a valid header value")]
-    InvalidApiKey(#[from] InvalidHeaderValue),
+    InvalidApiKey {
+        source: InvalidHeaderValue,
+        key: String,
+    },
 
     /// Node returned a 4xx or 5xx error code.
     ///
     /// Returns the description of the error returned by the node
     /// in the `detail` field in the JSON response.
     #[error("Node returned error: {0}")]
-    RequestFailed(String),
+    BadRequest(String),
 
-    #[error("Failed to deserialize error object returned by node API")]
-    ErrorObjectDeserialization(#[source] reqwest::Error),
+    #[error("Error occurred while sending HTTP request")]
+    Http(#[source] reqwest::Error),
+
+    #[error("Failed to parse JSON")]
+    Json(#[source] reqwest::Error),
+
+    #[error("Failed to build HTTP client")]
+    Client(#[source] reqwest::Error),
+
+    #[error("Failed to parse URL")]
+    UrlParsing(#[from] url::ParseError),
+
+    #[error("Invalid base URL provided")]
+    BaseUrl,
 }
 
 /// Error object returned by the nodes API.
@@ -42,18 +56,15 @@ pub struct NodeApiError {
 
 pub(crate) async fn process_response<T: DeserializeOwned>(
     response: reqwest::Response,
-) -> Result<T, crate::Error> {
+) -> Result<T, NodeError> {
     if response.status().is_success() {
-        response
-            .json::<T>()
-            .await
-            .map_err(crate::Error::ResponseDeserialization)
+        Ok(response.json::<T>().await.map_err(NodeError::Json)?)
     } else {
         let node_err = response
             .json::<NodeApiError>()
             .await
-            .map_err(NodeError::ErrorObjectDeserialization)?;
-        Err(NodeError::RequestFailed(node_err.detail).into())
+            .map_err(NodeError::Json)?;
+        Err(NodeError::BadRequest(node_err.detail).into())
     }
 }
 
@@ -63,10 +74,18 @@ pub struct NodeClient {
 }
 
 impl NodeClient {
-    pub fn from_url_str(url_str: &str, api_key: String, timeout: Duration) -> Result<Self, Error> {
+    pub fn from_url_str(
+        url_str: &str,
+        api_key: String,
+        timeout: Duration,
+    ) -> Result<Self, NodeError> {
         let url = Url::parse(url_str)?;
         let mut headers = HeaderMap::new();
-        let mut key_header_val = HeaderValue::from_str(&api_key).map_err(NodeError::from)?;
+        let mut key_header_val =
+            HeaderValue::from_str(&api_key).map_err(|e| NodeError::InvalidApiKey {
+                source: e,
+                key: api_key,
+            })?;
         key_header_val.set_sensitive(true);
         headers.insert("api_key", key_header_val);
         let client = Client::builder()
@@ -76,9 +95,9 @@ impl NodeClient {
             // useful to debug response errors
             .connection_verbose(true)
             .build()
-            .map_err(|e| Error::BuildClient(e))?;
+            .map_err(NodeError::Client)?;
         Ok(Self {
-            endpoints: NodeEndpoint::new(client, url)?,
+            endpoints: NodeEndpoint::new(client, url),
         })
     }
 
