@@ -1,6 +1,14 @@
-use super::{endpoints::NodeEndpoint, NodeError};
+use super::{
+    endpoints::{
+        scan::{ScanBox, ScanQuery},
+        NodeEndpoint,
+    },
+    NodeError,
+};
 use ergo_lib::{
     chain::transaction::{unsigned::UnsignedTransaction, Transaction},
+    ergo_chain_types::EcPoint,
+    ergotree_interpreter::sigma_protocol::private_input::DlogProverInput,
     ergotree_ir::{
         chain::{address::NetworkAddress, ergo_box::ErgoBox},
         ergo_tree::ErgoTree,
@@ -17,7 +25,7 @@ impl<'a> NodeExtension<'a> {
         Self { endpoints }
     }
 
-    async fn get_utxos(&self) -> Result<Vec<ErgoBox>, NodeError> {
+    pub async fn get_utxos(&self) -> Result<Vec<ErgoBox>, NodeError> {
         Ok(self
             .endpoints
             .wallet()?
@@ -84,5 +92,37 @@ impl<'a> NodeExtension<'a> {
             .address()
             .script()
             .unwrap())
+    }
+    /// Get private key for EcPoint if it is in wallet database
+    pub async fn get_private_key(&self, public_key: EcPoint) -> Result<DlogProverInput, NodeError> {
+        let address = self.endpoints.utils()?.raw_to_address(public_key).await?;
+        self.endpoints.wallet()?.get_private_key(&address).await
+    }
+
+    /// Get all unspent boxes. Maximum amount of boxes that can be retrieved in one API call to /scan/unspentBoxes is 2500, this will keep calling the endpoint until all boxes are retrieved
+    pub async fn get_all_unspent_boxes(
+        &self,
+        scan_id: u32,
+        include_unconfirmed: bool,
+    ) -> Result<Vec<ScanBox>, NodeError> {
+        let mut scan_query = ScanQuery {
+            min_confirmations: if include_unconfirmed { -1 } else { 0 },
+            max_confirmations: -1,
+            min_inclusion_height: 0,
+            max_inclusion_height: -1,
+            limit: 2500,
+            offset: 0,
+        };
+        let mut boxes = vec![];
+        let scan_endpoint = self.endpoints.scan()?;
+        loop {
+            let new_boxes = scan_endpoint.unspent_boxes(scan_id, &scan_query).await?;
+            boxes.extend_from_slice(&new_boxes);
+            if new_boxes.is_empty() {
+                break;
+            }
+            scan_query.offset += new_boxes.len() as u32;
+        }
+        Ok(boxes)
     }
 }
